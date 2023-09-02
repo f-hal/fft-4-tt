@@ -54,14 +54,23 @@ endfunction
     assign weight_mul_re = weight_mul[4*BIT_WIDTH:2*BIT_WIDTH+1];
     assign weight_mul_im = weight_mul[2*BIT_WIDTH-1:0];
     
+    // Rounds up whenever necessary
+    wire signed [2*BIT_WIDTH-1:0] rnd_out_a_re, rnd_out_a_im;
+    wire signed [2*BIT_WIDTH-1:0] rnd_out_b_re, rnd_out_b_im;
+    
+    assign rnd_out_a_re = aug_evn_re + weight_mul_re + 1'b1;
+    assign rnd_out_a_im = aug_evn_im + weight_mul_im + 1'b1;  // Does not overflow (problem)
+    assign rnd_out_b_re = aug_evn_re - weight_mul_re + 1'b1;
+    assign rnd_out_b_im = aug_evn_im - weight_mul_im + 1'b1;
+    
     // Perfoms additions/subtractions
     wire signed [2*BIT_WIDTH-1:0] tmp_out_a_re, tmp_out_a_im;
     wire signed [2*BIT_WIDTH-1:0] tmp_out_b_re, tmp_out_b_im;
     
-    assign tmp_out_a_re = aug_evn_re + weight_mul_re + 1'b1;
-    assign tmp_out_a_im = aug_evn_im + weight_mul_im + 1'b1;  // Does not overflow (problem)
-    assign tmp_out_b_re = aug_evn_re - weight_mul_re + 1'b1;
-    assign tmp_out_b_im = aug_evn_im - weight_mul_im + 1'b1;
+    assign tmp_out_a_re = (&rnd_out_a_re[BIT_WIDTH-2:0]) ? (rnd_out_a_re+1) : rnd_out_a_re;
+    assign tmp_out_a_im = (&rnd_out_a_im[BIT_WIDTH-2:0]) ? (rnd_out_a_im+1) : rnd_out_a_im;
+    assign tmp_out_b_re = (&rnd_out_b_re[BIT_WIDTH-2:0]) ? (rnd_out_b_re+1) : rnd_out_b_re;
+    assign tmp_out_b_im = (&rnd_out_b_im[BIT_WIDTH-2:0]) ? (rnd_out_b_im+1) : rnd_out_b_im;
     
     wire signed [2*BIT_WIDTH+1:0] inv_weight_re, inv_weight_im;
     assign inv_weight_re = - weight_mul_re;

@@ -24,7 +24,6 @@ module tt_um_f_hal_fft (
     // Verilog req
     reg [7:0] uio_out_pass, uo_out_pass;
     assign uio_out = 0;
-    assign uo_out = uo_out_pass;
     
     reg [2:0] main_state;
     reg [2:0] mode_sel_state;
@@ -159,8 +158,8 @@ module tt_um_f_hal_fft (
                 uo_out_pass <= 8'b00111001;  // Displays C (no dot)
             else if (main_state == `S_DATA_OUT && mem_ld_state == `SML_DSP_F)
                 uo_out_pass <= 8'b01110001;  // Displays F (no dot)
-            else if (main_state == `S_DATA_OUT && mem_ld_state == `SML_READ)
-                uo_out_pass <= fft_uo_out; 
+            //else if (main_state == `S_DATA_OUT && mem_ld_state == `SML_READ)
+            //    uo_out_pass <= fft_uo_out; 
             else
                 uo_out_pass <= 8'b00000000; 
         end
@@ -176,6 +175,8 @@ module tt_um_f_hal_fft (
 
     assign fft_uo_out = data_out;
     assign wr_en = cu_wr_en || fft_wr_en;
+    
+    assign uo_out = (main_state == `S_DATA_OUT && mem_ld_state == `SML_READ) ? fft_uo_out : uo_out_pass;
     
     // Memory control FSM
     reg [$clog2(FFT_MAX_SIZE):0] mem_ld_max_counter, mem_ld_counter;
@@ -211,7 +212,7 @@ module tt_um_f_hal_fft (
                 end else begin
                     cu_wr_en <= 0;
                 end
-                `SML_RD_STNBY: if (main_state == `S_DATA_OUT) begin
+                `SML_RD_STNBY: if (fft_fin) begin
                     mem_ld_state <= `SML_READ;
                     mem_ld_counter <= 0;
                 end

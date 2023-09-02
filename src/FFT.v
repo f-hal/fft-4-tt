@@ -11,7 +11,7 @@ module shuffler #(parameter BIT_WIDTH = 8, parameter MODE_NUM = 3, parameter FFT
                        output reg ready,
                        output reg wr_en,
                        output [$clog2(FFT_SIZE)-1:0] address_out, 
-                       output reg [2*BIT_WIDTH-1:0] data_out
+                       output wire [2*BIT_WIDTH-1:0] data_out
                        //output logic [BIT_WIDTH-1:0] im
                       );
     
@@ -72,6 +72,8 @@ module shuffler #(parameter BIT_WIDTH = 8, parameter MODE_NUM = 3, parameter FFT
     
     reg [3:0] fft_state;
     
+    assign data_out = (fft_state == `SSH_ST_EVN) ? even_out : odd_out;
+    
 	always @(posedge clk) begin
 		if (rst) begin
             fft_state <= `SSH_STNBY;
@@ -84,7 +86,7 @@ module shuffler #(parameter BIT_WIDTH = 8, parameter MODE_NUM = 3, parameter FFT
             cnt_im_jump <= 0;        
             cnt_gen <= 0;        cnt_set <= 0;
             cnt_skip <= 0;       im_jump <= 0;
-            wr_en <= 0;          data_out <= 0;
+            wr_en <= 0;          //data_out <= 0;
             fin_weight_re <= 0;  fin_weight_im <= 0;
             odd_in <= 0;         even_in <= 0;
             wei_adr <= 0;        // wei_jmp <= 0;
@@ -120,11 +122,11 @@ module shuffler #(parameter BIT_WIDTH = 8, parameter MODE_NUM = 3, parameter FFT
                 `SSH_LD_ODD: begin fft_state <= `SSH_ST_ODD; odd_in <= data_in; wr_en <= 1; end
                 `SSH_ST_ODD: begin fft_state <= `SSH_ST_EVN;
                     wr_en <=1; 
-                    data_out <= odd_out;
+                    //data_out <= odd_out;
                     cnt_gen <= cnt_gen - im_jump;
                 end
                 `SSH_ST_EVN: begin wr_en <=1; 
-                    data_out <= even_out;
+                    //data_out <= even_out;
                     wr_en <= 0;
                     if (cnt_im_jump == max_cnt_im_jump - 1 && max_cnt_skip == 4 << mode) fft_state <= `SSH_FIN;
                     else fft_state <= `SSH_LD_EVN;
